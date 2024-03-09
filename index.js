@@ -2,6 +2,21 @@ const express = require('express');
 const sql = require('mssql');
 const app = express();
 
+// Middleware to set CORS headers
+app.use((req, res, next) => {
+    // Replace "*" with the specific domain you want to allow or keep it as "*" to allow all origins
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    
+    // If the client needs to support cookies and HTTP authentication, include the following:
+    res.header('Access-Control-Allow-Credentials', 'true');
+
+    // If your client needs to support HTTP methods other than GET and POST, include the following:
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    
+    next();
+});
+
 // Database configuration
 const dbConfig = {
     user: 'dev',
@@ -40,7 +55,7 @@ app.get('/medallon/:uid', async (req, res) => {
 
 // Start the server on port 3000
 app.listen(3000, () => {
-  console.log('Server started on port 3000.');
+    console.log('Server started on port 3000 with CORS enabled.');
 });
 
 
