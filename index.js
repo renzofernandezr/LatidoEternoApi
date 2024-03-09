@@ -4,14 +4,14 @@ const app = express();
 
 // Middleware to set CORS headers
 app.use((req, res, next) => {
-    // Replace "*" with the specific domain you want to allow or keep it as "*" to allow all origins
+    // Allow all origins
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
     
-    // If the client needs to support cookies and HTTP authentication, include the following:
+    // Support cookies and HTTP authentication
     res.header('Access-Control-Allow-Credentials', 'true');
 
-    // If your client needs to support HTTP methods other than GET and POST, include the following:
+    // Support additional HTTP methods
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     
     next();
@@ -29,23 +29,38 @@ const dbConfig = {
     }
 };
 
+// Function to get a Medallon by UID
+async function getMedallon(uid) {
+    try {
+        // Ensure a single connection pool is used for multiple requests
+        await sql.connect(dbConfig);
 
-// Define a GET route to retrieve a list of vehicles
+        // Execute the query
+        const result = await sql.query`SELECT * FROM Maestro_Medallon WHERE UID = ${uid}`;
+        return result.recordset; // Return the recordset
+
+    } catch (err) {
+        throw err; // Rethrow the error to be caught by the route handler
+    }
+}
+
+// Test route
 app.get('/hola', (req, res) => {
- res.json("hola")
+    res.json("hola");
 });
 
 // Endpoint to get a Medallon by UID
 app.get('/medallon/:uid', async (req, res) => {
     try {
         const uid = req.params.uid;
-        await sql.connect(dbConfig);
-        const result = await sql.query`SELECT * FROM Maestro_Medallon WHERE UID = ${uid}`;
+        const recordset = await getMedallon(uid); // Call the function with uid
 
-        if (result.recordset.length > 0) {
-            res.json(result.recordset[0]);
+        // If a result is found, return the first record
+        if (recordset.length > 0) {
+            res.json(recordset[0]);
         } else {
-            res.status(404).send('Medallon not found');
+            // If no result is found, return an empty JSON object
+            res.json({});
         }
     } catch (err) {
         console.error(err);
@@ -57,5 +72,3 @@ app.get('/medallon/:uid', async (req, res) => {
 app.listen(3000, () => {
     console.log('Server started on port 3000 with CORS enabled.');
 });
-
-
