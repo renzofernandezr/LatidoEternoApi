@@ -51,43 +51,60 @@ app.get('/hola', (req, res) => {
 
 app.get('/medallon/:uid', async (req, res) => {
     try {
-        const uid = req.params.uid;
-        await sql.connect(dbConfig);
-        
-        // Corrected SQL query
-        const result = await sql.query`
-            SELECT m.idMedallon, m.UID, m.estado, m.URL, mi.*
-            FROM Maestro_Medallon AS m
-            INNER JOIN Miembro AS mi ON m.UID = mi.UID_Medallon
-            WHERE m.UID = ${uid}`;
+        const { uid } = req.params;
 
-        if (result.recordset.length > 0) {
-            const medallonData = result.recordset[0];
-            // Constructing the main object with specified parameters
-            const medallonWithMiembro = {
+        await sql.connect(dbConfig);
+
+        const queryResult = await sql.query`
+            SELECT 
+                maestro.idMedallon,
+                maestro.UID,
+                maestro.estado,
+                maestro.url AS FotoUrl,
+                miembro.CodigoMiembro AS idMiembro,
+                miembro.Nombre,
+                miembro.Apellido,
+                miembro.FechaDeNacimiento,
+                miembro.FechaDePartida,
+                miembro.Frase,
+                miembro.Biografia
+            FROM 
+                Maestro_Medallon AS maestro
+            INNER JOIN 
+                Miembro AS miembro
+            ON 
+                maestro.UID = miembro.UID_Medallon
+            WHERE 
+                maestro.UID = ${uid}`;
+
+        if (queryResult.recordset.length > 0) {
+            const medallonData = queryResult.recordset[0];
+
+            const response = {
                 idMedallon: medallonData.idMedallon,
+                idMiembro: medallonData.idMiembro,
                 UID: medallonData.UID,
                 estado: medallonData.estado,
-                URL: medallonData.URL,
+                FotoUrl: medallonData.FotoUrl,  // Include FotoUrl in the response
                 Miembro: {
-                    // Extract Miembro details; ensure these match your Miembro table's schema
-                    CodigoMiembro: medallonData.CodigoMiembro,
-                    CodigoUsuario: medallonData.CodigoUsuario,
                     Nombre: medallonData.Nombre,
                     Apellido: medallonData.Apellido,
-                    Biografia: medallonData.Biografia,
-                    UID_Medallon: medallonData.UID_Medallon,
-                    FotoUrl: medallonData.FotoUrl
+                    FechaDeNacimiento: medallonData.FechaDeNacimiento,
+                    FechaDePartida: medallonData.FechaDePartida,
+                    Frase: medallonData.Frase,
+                    Biografia: medallonData.Biografia  // Include Biografia in the Miembro object
                 }
             };
 
-            res.json(medallonWithMiembro);
+            res.json(response);
         } else {
             res.status(404).send('Medallon not found');
         }
     } catch (err) {
-        console.error(err);
-        res.status(500).send('An error occurred');
+        console.error(err.message);
+        res.status(500).send('An error occurred while retrieving Medallon data');
+    } finally {
+        sql.close();
     }
 });
 
