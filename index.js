@@ -60,14 +60,14 @@ app.get('/medallon/:uid', async (req, res) => {
                 maestro.idMedallon,
                 maestro.UID,
                 maestro.estado,
-                maestro.url AS FotoUrl,
                 miembro.CodigoMiembro AS idMiembro,
                 miembro.Nombre,
                 miembro.Apellido,
                 miembro.FechaDeNacimiento,
                 miembro.FechaDePartida,
                 miembro.Frase,
-                miembro.Biografia
+                miembro.Biografia,
+                miembro.FotoUrl 
             FROM 
                 Maestro_Medallon AS maestro
             INNER JOIN 
@@ -82,17 +82,17 @@ app.get('/medallon/:uid', async (req, res) => {
 
             const response = {
                 idMedallon: medallonData.idMedallon,
-                idMiembro: medallonData.idMiembro,
                 UID: medallonData.UID,
                 estado: medallonData.estado,
-                FotoUrl: medallonData.FotoUrl,  // Include FotoUrl in the response
                 Miembro: {
+                    idMiembro: medallonData.idMiembro,
                     Nombre: medallonData.Nombre,
                     Apellido: medallonData.Apellido,
                     FechaDeNacimiento: medallonData.FechaDeNacimiento,
                     FechaDePartida: medallonData.FechaDePartida,
                     Frase: medallonData.Frase,
-                    Biografia: medallonData.Biografia  // Include Biografia in the Miembro object
+                    Biografia: medallonData.Biografia,
+                    FotoUrl: medallonData.FotoUrl  // Include FotoUrl in the Miembro object
                 }
             };
 
@@ -107,6 +107,7 @@ app.get('/medallon/:uid', async (req, res) => {
         sql.close();
     }
 });
+
 
 
 // Start the server on port 3000
