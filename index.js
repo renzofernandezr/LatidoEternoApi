@@ -49,24 +49,48 @@ app.get('/hola', (req, res) => {
     res.json("hola");
 });
 
-// Endpoint to get a Medallon by UID
 app.get('/medallon/:uid', async (req, res) => {
     try {
         const uid = req.params.uid;
-        const recordset = await getMedallon(uid); // Call the function with uid
+        await sql.connect(dbConfig);
+        
+        // Corrected SQL query
+        const result = await sql.query`
+            SELECT m.idMedallon, m.UID, m.estado, m.URL, mi.*
+            FROM Maestro_Medallon AS m
+            INNER JOIN Miembro AS mi ON m.UID = mi.UID_Medallon
+            WHERE m.UID = ${uid}`;
 
-        // If a result is found, return the first record
-        if (recordset.length > 0) {
-            res.json(recordset[0]);
+        if (result.recordset.length > 0) {
+            const medallonData = result.recordset[0];
+            // Constructing the main object with specified parameters
+            const medallonWithMiembro = {
+                idMedallon: medallonData.idMedallon,
+                UID: medallonData.UID,
+                estado: medallonData.estado,
+                URL: medallonData.URL,
+                Miembro: {
+                    // Extract Miembro details; ensure these match your Miembro table's schema
+                    CodigoMiembro: medallonData.CodigoMiembro,
+                    CodigoUsuario: medallonData.CodigoUsuario,
+                    Nombre: medallonData.Nombre,
+                    Apellido: medallonData.Apellido,
+                    Biografia: medallonData.Biografia,
+                    UID_Medallon: medallonData.UID_Medallon,
+                    FotoUrl: medallonData.FotoUrl
+                }
+            };
+
+            res.json(medallonWithMiembro);
         } else {
-            // If no result is found, return an empty JSON object
-            res.json({});
+            res.status(404).send('Medallon not found');
         }
     } catch (err) {
         console.error(err);
         res.status(500).send('An error occurred');
     }
 });
+
 
 // Start the server on port 3000
 app.listen(3000, () => {
