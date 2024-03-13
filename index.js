@@ -46,7 +46,7 @@ async function getMedallon(uid) {
 
 // Test route
 app.get('/hola', (req, res) => {
-    res.json("hola");
+    res.json("holas");
 });
 
 app.get('/medallon/:uid', async (req, res) => {
