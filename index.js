@@ -108,6 +108,42 @@ app.get('/medallon/:uid', async (req, res) => {
     }
 });
 
+app.get('/ubigeo/:idUbigeo', async (req, res) => {
+    try {
+        const { idUbigeo } = req.params;
+        await sql.connect(dbConfig);
+        const queryResult = await sql.query`
+            SELECT 
+                ubi.idUbigeo, ubi.Descripcion, ubi.urlImagePais,
+                CONCAT(ubi.Descripcion, ', ', parentUbi.Descripcion) AS FullDescripcion,
+                parentUbi.urlImagePais AS ParentUrlImagePais
+            FROM 
+                Maestro_Ubigeo AS ubi
+                LEFT JOIN Maestro_Ubigeo AS parentUbi ON ubi.idPadreUbigeo = parentUbi.idUbigeo
+            WHERE 
+                ubi.idUbigeo = ${idUbigeo}`;
+
+        if (queryResult.recordset.length > 0) {
+            const ubigeoData = queryResult.recordset[0];
+            const response = {
+                idUbigeo: ubigeoData.idUbigeo,
+                Descripcion: ubigeoData.Descripcion,
+                FullDescripcion: ubigeoData.FullDescripcion,
+                urlImagePais: ubigeoData.ParentUrlImagePais,
+            };
+            res.json(response);
+        } else {
+            res.status(404).send('Ubigeo not found');
+        }
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('An error occurred');
+    } finally {
+        sql.close();
+    }
+});
+
+
 
 
 // Start the server on port 3000
