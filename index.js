@@ -68,6 +68,7 @@ app.get('/medallon/:uid', async (req, res) => {
                 miembro.Frase,
                 miembro.Biografia,
                 miembro.FotoUrl 
+                miembro.idUbigeo
             FROM 
                 Maestro_Medallon AS maestro
             INNER JOIN 
@@ -92,7 +93,8 @@ app.get('/medallon/:uid', async (req, res) => {
                     FechaDePartida: medallonData.FechaDePartida,
                     Frase: medallonData.Frase,
                     Biografia: medallonData.Biografia,
-                    FotoUrl: medallonData.FotoUrl  // Include FotoUrl in the Miembro object
+                    FotoUrl: medallonData.FotoUrl,
+                    idUbigeo: medallonData.idUbigeo
                 }
             };
 
