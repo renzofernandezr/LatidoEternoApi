@@ -67,7 +67,7 @@ app.get('/medallon/:uid', async (req, res) => {
                 miembro.FechaDePartida,
                 miembro.Frase,
                 miembro.Biografia,
-                miembro.FotoUrl 
+                miembro.FotoUrl, 
                 miembro.idUbigeo
             FROM 
                 Maestro_Medallon AS maestro
