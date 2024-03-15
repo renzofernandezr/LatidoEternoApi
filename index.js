@@ -49,6 +49,25 @@ app.get('/hola', (req, res) => {
     res.json("holas");
 });
 
+app.get('/Maestro_Medallon/:UID', async (req, res) => {
+    try {
+        const { UID } = req.params;
+        await sql.connect(dbConfig);
+        const result = await sql.query`SELECT * FROM Maestro_Medallon WHERE UID = ${UID}`;
+
+        if (result.recordset.length > 0) {
+            res.json(result.recordset[0]);
+        } else {
+            res.status(404).send('Maestro_Medallon not found');
+        }
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('An error occurred while retrieving Maestro_Medallon data');
+    } finally {
+        sql.close();
+    }
+});
+
 app.get('/medallon/:uid', async (req, res) => {
     try {
         const { uid } = req.params;
