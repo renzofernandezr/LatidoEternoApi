@@ -29,18 +29,26 @@ const dbConfig = {
     }
 };
 
-// Function to get a Medallon by UID
-async function getMedallon(uid) {
+async function getUrlFromMiembroContenido(idMiembro, Tipo) {
     try {
-        // Ensure a single connection pool is used for multiple requests
+        // Assuming sql is your database connection object and it's already configured
         await sql.connect(dbConfig);
+        const result = await sql.query`
+            SELECT url 
+            FROM Miembro_Contenido 
+            WHERE idMiembro = ${idMiembro} AND Tipo = ${Tipo}`;
 
-        // Execute the query
-        const result = await sql.query`SELECT * FROM Maestro_Medallon WHERE UID = ${uid}`;
-        return result.recordset; // Return the recordset
-
+        if (result.recordset.length > 0) {
+            // Assuming the query returns at least one row, return the URL of the first match
+            return result.recordset[0].url;
+        } else {
+            // Handle the case where no matching row is found
+            console.log('No matching Miembro_Contenido found.');
+            return null;
+        }
     } catch (err) {
-        throw err; // Rethrow the error to be caught by the route handler
+        console.error('Error retrieving URL from Miembro_Contenido:', err);
+        return null;
     }
 }
 
@@ -68,93 +76,59 @@ app.get('/Maestro_Medallon/:UID', async (req, res) => {
     }
 });
 
+// Assuming getUrlFromMiembroContenido is defined and available in the scope
+
 app.get('/medallon/:uid', async (req, res) => {
     try {
         const { uid } = req.params;
-
         await sql.connect(dbConfig);
-
         const queryResult = await sql.query`
-            SELECT 
-                maestro.idMedallon,
-                maestro.UID,
-                maestro.estado,
-                miembro.CodigoMiembro AS idMiembro,
-                miembro.Nombre,
-                miembro.Apellido,
-                miembro.FechaDeNacimiento,
-                miembro.FechaDePartida,
-                miembro.Frase,
-                miembro.Biografia,
-                miembro.FotoUrl, 
-                miembro.idUbigeo
-            FROM 
-                Maestro_Medallon AS maestro
-            INNER JOIN 
-                Miembro AS miembro
-            ON 
-                maestro.UID = miembro.UID_Medallon
-            WHERE 
-                maestro.UID = ${uid}`;
+            SELECT m.idMedallon, m.UID, m.estado, 
+                   mi.CodigoMiembro, mi.CodigoUsuario, mi.Nombre AS MiembroNombre, mi.Apellido, 
+                   mi.FechaDeNacimiento, mi.FechaDePartida, mi.Biografia, mi.Frase, 
+                   p.Nombre AS PaisNombre, p.NombreSpanish AS PaisNombreSpanish, p.nombreCorto AS PaisNombreCorto,
+                   e.nombre AS EstadoNombre
+            FROM Maestro_Medallon AS m
+            JOIN Miembro AS mi ON m.UID = mi.UID_Medallon
+            JOIN Maestro_Paises AS p ON mi.idPais = p.id
+            JOIN Estados AS e ON mi.idEstado = e.id
+            WHERE m.UID = ${uid}`;
 
         if (queryResult.recordset.length > 0) {
             const medallonData = queryResult.recordset[0];
+            const avatarUrl = await getUrlFromMiembroContenido(medallonData.CodigoMiembro, 'avatar');
+            const bannerUrl = await getUrlFromMiembroContenido(medallonData.CodigoMiembro, 'banner');
 
+            // Constructing the response object with additional AvatarUrl and BannerUrl
             const response = {
                 idMedallon: medallonData.idMedallon,
                 UID: medallonData.UID,
                 estado: medallonData.estado,
                 Miembro: {
-                    idMiembro: medallonData.idMiembro,
-                    Nombre: medallonData.Nombre,
+                    CodigoMiembro: medallonData.CodigoMiembro,
+                    CodigoUsuario: medallonData.CodigoUsuario,
+                    Nombre: medallonData.MiembroNombre,
                     Apellido: medallonData.Apellido,
                     FechaDeNacimiento: medallonData.FechaDeNacimiento,
                     FechaDePartida: medallonData.FechaDePartida,
-                    Frase: medallonData.Frase,
                     Biografia: medallonData.Biografia,
-                    FotoUrl: medallonData.FotoUrl,
-                    idUbigeo: medallonData.idUbigeo
+                    Frase: medallonData.Frase,
+                    Pais: {
+                        Nombre: medallonData.PaisNombre,
+                        NombreSpanish: medallonData.PaisNombreSpanish,
+                        NombreCorto: medallonData.PaisNombreCorto,
+                        FlagImageUrl: `https://blobcontlatidoeterno.blob.core.windows.net/appimagenes//banderas/flag-of-${medallonData.PaisNombre}.jpg`
+                    },
+                    Estado: {
+                        Nombre: medallonData.EstadoNombre
+                    },
+                    AvatarUrl: avatarUrl,
+                    BannerUrl: bannerUrl
                 }
             };
-
             res.json(response);
         } else {
             res.status(404).send('Medallon not found');
-        }
-    } catch (err) {
-        console.error(err.message);
-        res.status(500).send('An error occurred while retrieving Medallon data');
-    } finally {
-        sql.close();
-    }
-});
-
-app.get('/ubigeo/:idUbigeo', async (req, res) => {
-    try {
-        const { idUbigeo } = req.params;
-        await sql.connect(dbConfig);
-        const queryResult = await sql.query`
-            SELECT 
-                ubi.idUbigeo, ubi.Descripcion, ubi.urlImagePais,
-                CONCAT(ubi.Descripcion, ', ', parentUbi.Descripcion) AS FullDescripcion,
-                parentUbi.urlImagePais AS ParentUrlImagePais
-            FROM 
-                Maestro_Ubigeo AS ubi
-                LEFT JOIN Maestro_Ubigeo AS parentUbi ON ubi.idPadreUbigeo = parentUbi.idUbigeo
-            WHERE 
-                ubi.idUbigeo = ${idUbigeo}`;
-
-        if (queryResult.recordset.length > 0) {
-            const ubigeoData = queryResult.recordset[0];
-            const response = {
-                idUbigeo: ubigeoData.idUbigeo,
-                Descripcion: ubigeoData.Descripcion,
-                FullDescripcion: ubigeoData.FullDescripcion,
-                urlImagePais: ubigeoData.ParentUrlImagePais,
-            };
-            res.json(response);
-        } else {
-            res.status(404).send('Ubigeo not found');
         }
     } catch (err) {
         console.error(err);
@@ -163,8 +137,6 @@ app.get('/ubigeo/:idUbigeo', async (req, res) => {
         sql.close();
     }
 });
-
-
 
 
 // Start the server on port 3000
