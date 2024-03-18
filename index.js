@@ -117,7 +117,7 @@ app.get('/medallon/:uid', async (req, res) => {
                         Nombre: medallonData.PaisNombre,
                         NombreSpanish: medallonData.PaisNombreSpanish,
                         NombreCorto: medallonData.PaisNombreCorto,
-                        FlagImageUrl: `https://blobcontlatidoeterno.blob.core.windows.net/app-images/banderas/${medallonData.PaisNombre}.jpg`
+                        FlagImageUrl: `https://blobcontlatidoeterno.blob.core.windows.net/app-images/banderas/flag-of-${medallonData.PaisNombre}.jpg`
                     },
                     Estado: {
                         Nombre: medallonData.EstadoNombre
