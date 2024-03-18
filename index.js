@@ -138,8 +138,35 @@ app.get('/medallon/:uid', async (req, res) => {
     }
 });
 
+app.get('/media/:idMiembro', async (req, res) => {
+    try {
+        const { idMiembro } = req.params; // Extracting idMiembro from the route parameters
+
+        await sql.connect(dbConfig); // Connecting to the database
+        const result = await sql.query`
+            SELECT * FROM Miembro_Contenido 
+            WHERE IdMiembro = ${idMiembro} 
+            AND (Tipo = 'video' OR Tipo = 'imagen') 
+            AND estado = 'a'`; // Fetching only active ('AC') videos or images
+
+        if (result.recordset.length > 0) {
+            // If there are results, send them back
+            res.json(result.recordset);
+        } else {
+            // If no results, send a 404 Not Found response
+            res.status(404).send('No media found for the provided IdMiembro.');
+        }
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('An error occurred while retrieving media data.');
+    } finally {
+        await sql.close(); // Ensure the database connection is closed after the operation
+    }
+});
+
+
 
 // Start the server on port 3000
 app.listen(3000, () => {
-    console.log('Server started on port 3000 with CORS enabled.');
+    console.log('Server started on port 4000 with CORS enabled.');
 });
