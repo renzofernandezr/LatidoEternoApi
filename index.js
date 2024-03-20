@@ -85,7 +85,7 @@ app.get('/medallon/:uid', async (req, res) => {
         const queryResult = await sql.query`
             SELECT m.idMedallon, m.UID, m.estado, 
                    mi.CodigoMiembro, mi.CodigoUsuario, mi.Nombre AS MiembroNombre, mi.Apellido, 
-                   mi.FechaDeNacimiento, mi.FechaDePartida, mi.Biografia, mi.Frase, 
+                   mi.FechaDeNacimiento, mi.FechaDePartida, mi.Biografia, mi.Frase,mi.relacion,mi.fechacreacion 
                    p.Nombre AS PaisNombre, p.NombreSpanish AS PaisNombreSpanish, p.nombreCorto AS PaisNombreCorto,
                    e.nombre AS EstadoNombre
             FROM Maestro_Medallon AS m
@@ -113,6 +113,9 @@ app.get('/medallon/:uid', async (req, res) => {
                     FechaDePartida: medallonData.FechaDePartida,
                     Biografia: medallonData.Biografia,
                     Frase: medallonData.Frase,
+                    Relacion: medallonData.relacion,
+                    Fechacreacion: medallonData.fechacreacion,
+
                     Pais: {
                         Nombre: medallonData.PaisNombre,
                         NombreSpanish: medallonData.PaisNombreSpanish,
@@ -164,9 +167,42 @@ app.get('/media/:idMiembro', async (req, res) => {
     }
 });
 
+app.get('/members/:CodigoUsuario', async (req, res) => {
+    try {
+        // Extract CodigoUsuario from the URL parameter
+        const { CodigoUsuario } = req.params;
+
+        // Connect to the database
+        await sql.connect(dbConfig);
+
+        // Query to fetch all members linked to the given CodigoUsuario
+        const result = await sql.query`
+            SELECT 
+                CodigoMiembro, CodigoUsuario, Nombre, Apellido, FechaDeNacimiento, 
+                FechaDePartida, Biografia, UID_Medallon, Frase, idPais, idEstado, 
+                relacion, fechacreacion 
+            FROM Miembro 
+            WHERE CodigoUsuario = ${CodigoUsuario}`;
+
+        // Check if members were found
+        if (result.recordset.length > 0) {
+            // Send the result as JSON
+            res.json(result.recordset);
+        } else {
+            // Handle case where no members are found
+            res.status(404).send('No members found for the provided CodigoUsuario.');
+        }
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('An error occurred while retrieving members.');
+    } finally {
+        await sql.close(); // Ensure to close the database connection
+    }
+});
+
 
 
 // Start the server on port 3000
 app.listen(3000, () => {
-    console.log('Server started on port 4000 with CORS enabled.');
+    console.log('Server started on port 3000 with CORS enabled.');
 });
