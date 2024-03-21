@@ -85,7 +85,7 @@ app.get('/medallon/:uid', async (req, res) => {
         const queryResult = await sql.query`
             SELECT m.idMedallon, m.UID, m.estado, 
                    mi.CodigoMiembro, mi.CodigoUsuario, mi.Nombre AS MiembroNombre, mi.Apellido, 
-                   mi.FechaDeNacimiento, mi.FechaDePartida, mi.Biografia, mi.Frase,mi.relacion,mi.fechacreacion 
+                   mi.FechaDeNacimiento, mi.FechaDePartida, mi.Biografia, mi.Frase,mi.relacion,mi.fechacreacion, 
                    p.Nombre AS PaisNombre, p.NombreSpanish AS PaisNombreSpanish, p.nombreCorto AS PaisNombreCorto,
                    e.nombre AS EstadoNombre
             FROM Maestro_Medallon AS m
